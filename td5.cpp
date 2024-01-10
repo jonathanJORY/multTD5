@@ -25,6 +25,30 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define NBMESHES 4
+
+struct shaderProg
+{
+  unsigned int progid; // ID du shader
+  unsigned int mid; // ID de la matrice de modelisation qui est passée en variable uniform au shader de vertex
+  unsigned int vid;
+  unsigned int pid;
+  unsigned int LightID;
+}shaders[NBMESHES];
+
+
+struct maillage
+{
+  shaderProg shader;
+  unsigned int vaoids; // VaoID qui contient les VBO où ce trouve ce maillage (et ses normales etc..) dans la VRAM
+  unsigned int nbtriangles;
+  float angle = 0.0f;
+  float scale = 0.0f; // stocke l'opération de normalisation de la taille du maillage (réalisé lors de la lecture du maillage)
+  float inc = 0.1f;
+  float x, y, z; // stocke la position du centre du  maillage (réalisé lors de la lecture du maillage) il faut utiliser cette info lors du dessin afin de toujours veiller à recentrer le maillage en (0,0,0)
+
+} maillages[NBMESHES];
+
 repere rep(1.0);
 
 unsigned int progid;
@@ -37,12 +61,13 @@ unsigned int modelID;
 glm::mat4 model;
 glm::mat4 view;
 glm::mat4 proj;
+glm::mat4 mvp;
 
 float angle = 0.0f;
 float scale = 0.0f;
 float inc = 0.1f;
 
-unsigned int vaoids[ 4 ];
+unsigned int vaoids[ 1 ];
 
 unsigned int nbtriangles;
 
@@ -51,73 +76,70 @@ float x, y, z;
 std::array< float, 3 > eye = { 0.0f, 0.0f, 5.0f };
 
 
-void display()
+
+void displayMesh(maillage &mesh, glm::mat4 &model)
 {
+
+    mvp = proj * view * model;
+            glUseProgram(mesh.shader.progid);
+
+    glUniformMatrix4fv( mvpid, 1, GL_FALSE, &mvp[ 0 ][ 0 ] );
+    glUniformMatrix4fv( projID, 1, GL_FALSE, &proj[ 0 ][ 0 ] );
+    glUniformMatrix4fv( viewID, 1, GL_FALSE, &view[ 0 ][ 0 ] );
+    glUniformMatrix4fv( modelID, 1, GL_FALSE, &model[ 0 ][ 0 ] );
+    glBindVertexArray( mesh.vaoids );
+    
+    glDrawElements( GL_TRIANGLES, mesh.nbtriangles * 3, GL_UNSIGNED_INT, 0 );
+    glBindVertexArray( 0 );
+}
+
+void display()
+      {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    //glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-    // Positionnement de la caméra en ( 0.0f, 0.0f, 5.0f ),
-    // on regarde en direction du point ( 0.0f, 0.0f, 0.0f ),
-    // la tête est orienté suivant vers le haut l'axe y ( 0.0f, 1.0f, 0.0f ).
-    view = glm::lookAt( glm::vec3( eye[ 0 ], eye[ 1 ], eye[ 2 ] ), glm::vec3( eye[ 0 ], eye[ 1 ], eye[ 2 ]-1.0 ), glm::vec3( 0.0f, 1.0f, 0.0f ) );
-    
-    // initialisation de la matrice de modelisation
+    view = glm::lookAt( glm::vec3( eye[ 0 ], eye[ 1 ], eye[ 2 ] ),
+      glm::vec3( eye[ 0 ], eye[ 1 ], eye[ 2 ]-1.0f ),
+      glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+    float decal=1.25f;
+    //avion
     model = glm::mat4( 1.0f );
-    
-    // On recale le maillage à l'origine du repère
-    model = glm::translate( glm::mat4( 1.0f ), glm::vec3( -x, -y, -z ) ) * model;
-    
-    // Le modèle est mis à l'échelle
-    model = glm::scale(  glm::mat4( 1.0f ), glm::vec3( scale*3.5 ) ) * model ;
-    
-     // Le modele subit une rotation suivant l'axe z.
-    glm::mat4 rot=glm::rotate( glm::mat4( 1.0f ), glm::degrees( angle ), glm::vec3( 0.0f, 1.0f, 0.0f ) );
- 
-    model = glm::rotate( glm::mat4( 1.0f ), glm::degrees( angle ), glm::vec3( 0.0f, 1.0f, 0.0f ) ) * model;
+    model = glm::translate( model, glm::vec3( -decal, -decal, 0.0f ) );
+    model = glm::rotate( model, glm::degrees( angle ), glm::vec3( 1.0f, 1.0f, 1.0f ) ) ;
+    model = glm::scale(   model, glm::vec3( 0.008f) );
 
+    displayMesh(maillages[0], model);
 
-    // Calcul de la matrice mvp.
-    
-    // tester aussi:  (quelle différence?)
-    //rep.trace_repere(proj*  view *rot);
-    rep.trace_repere(proj*  view);
-    
-    
-    glm::mat4 modelview = view * model;  
+    //station
+    model = glm::mat4( 1.0f );
+    model = glm::translate( model, glm::vec3( decal, decal, 0.0f ) );
+    model = glm::rotate( model, glm::degrees( angle ), glm::vec3( 1.0f, 1.0f, 1.0f ) ) ;
+    model = glm::scale(   model, glm::vec3( 0.10f) );
 
-    // Étape 2 : Calcule l'inverse de la matrice modelview
-    glm::mat4 inverseModelview = inverse(modelview);
+    displayMesh(maillages[1], model);
+    //faucon
+    model = glm::mat4( 1.0f );
+    model = glm::translate( model, glm::vec3( -decal, decal, 0.0f ) );
+    model = glm::rotate( model, glm::degrees( angle ), glm::vec3( 1.0f, 1.0f, 1.0f ) ) ;
+    model = glm::scale(   model, glm::vec3( 0.005f) );
 
-    // Étape 3 : Transpose la matrice inverse
-    glm::mat4 transposedInverse = transpose(inverseModelview);
-
-    // Étape 4 : Extrait la partie supérieure gauche 3x3
-    glm::mat3 normalMatrix = glm::mat3(transposedInverse);
-    
-    glUseProgram( progid );// Choix du shader à appliquer.
-    
-    glUniformMatrix4fv(projID, 1, GL_FALSE, &proj[0][0]);
-    glUniformMatrix4fv(viewID, 1, GL_FALSE, &view[0][0]);
-    glUniformMatrix4fv(modelID, 1, GL_FALSE, &model[0][0]);
-
-    
-    glBindVertexArray( vaoids[ 0 ] );//Choix du vao
-
-    glDrawElements( GL_TRIANGLES, nbtriangles*3, GL_UNSIGNED_INT, 0 );
-
-    check_gl_error(); // pour le debugage d'openGL
+    displayMesh(maillages[2], model);
+    //lapin
+    model = glm::mat4( 1.0f );
+    model = glm::translate( model, glm::vec3( decal, -decal, 0.0f ) );
+    model = glm::rotate( model, glm::degrees( angle ), glm::vec3( 1.0f, 1.0f, 1.0f ) ) ;
+    model = glm::scale(   model, glm::vec3( 8.70f) );
+    displayMesh(maillages[3], model);
 
     glutSwapBuffers();
 }
 
-
 void idle()
 {
-    angle += 0.0001f;
+    angle += 0.00015f;
     if( angle >= 360.0f )
     {
         angle = 0.0f;
     }
-
     glutPostRedisplay();
 }
 
@@ -135,27 +157,30 @@ void special( int key, int x, int y )
     switch( key )
     {
         case GLUT_KEY_LEFT:
-            eye[ 0 ] -= 0.1f;
+            eye[ 0 ] -= 1.0f;
             break;
         case GLUT_KEY_RIGHT:
-            eye[ 0 ] += 0.1f;
+            eye[ 0 ] += 1.0f;
             break;
         case GLUT_KEY_UP:
-            eye[ 2 ] -= 0.1f;
+            eye[ 2 ] -= 1.0f;
             break;
         case GLUT_KEY_DOWN:
-            eye[ 2 ] += 0.1f;
+            eye[ 2 ] += 1.0f;
             break;
     }
     glutPostRedisplay();
 }
 
 
-void initVAOs()
+maillage initVAOs(shaderProg shader, std::string meshFile, std::string shadVert, std::string shadFrag)
 {
     unsigned int vboids[ 4 ];
-    //std::ifstream ifs( concat(MY_SHADER_PATH, "/meshes/space_station2.off" ));
-    std::ifstream ifs( concat(MY_SHADER_PATH, "/meshes/rabbit.off" ));
+
+    std::ifstream vs_ifs( MY_SHADER_PATH+ shadVert);
+    std::ifstream fs_ifs( MY_SHADER_PATH+ shadFrag );
+    
+    std::ifstream ifs( MY_SHADER_PATH+ meshFile );
     if (!ifs)
     {
         throw std::runtime_error("can't find the meshe!! Check the name and the path of this file? ");
@@ -273,6 +298,7 @@ std::cout<<scale;
         z *= -norminv;
     }
 
+
 check_gl_error();
     // Génération d'un Vertex Array Object contenant 3 Vertex Buffer Objects.
     glGenVertexArrays( 1, &vaoids[ 0 ] );
@@ -287,7 +313,7 @@ check_gl_error();
     glBufferData( GL_ARRAY_BUFFER, vertices.size() * sizeof( float ), vertices.data(), GL_STATIC_DRAW );
 
     // L'attribut in_pos du vertex shader est associé aux données de ce VBO.
-    auto pos = glGetAttribLocation( progid, "in_pos" );
+    auto pos = glGetAttribLocation( shader.progid, "in_pos" );
     glVertexAttribPointer( pos, 3, GL_FLOAT, GL_FALSE, 0, 0 );
     glEnableVertexAttribArray( pos );
 check_gl_error();
@@ -312,23 +338,25 @@ check_gl_error();
    glBindBuffer( GL_ARRAY_BUFFER, vboids[ 3 ] );
     glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof( float ), normals.data(), GL_STATIC_DRAW );
 
-    auto normal = glGetAttribLocation( progid, "in_normal" );
+    auto normal = glGetAttribLocation( shader.progid, "in_normal" );
     glVertexAttribPointer( normal, 3, GL_FLOAT, GL_TRUE, 0, 0 );
     glEnableVertexAttribArray( normal );
 check_gl_error();
     glBindVertexArray( 0 );
+
+    return maillage{shader, vaoids[0], nbtriangles, 0.0f, scale, inc, x, y, z};
 }
 
 
-void initShaders()
+shaderProg initShaders(std::string shadVert, std::string shadFrag)
 {
     unsigned int vsid, fsid;
     int status;
     int logsize;
     std::string log;
 
-   std::ifstream vs_ifs( concat(MY_SHADER_PATH, "/shaders/basic.vert.glsl") );
-   std::ifstream fs_ifs( concat(MY_SHADER_PATH, "/shaders/basic.frag.glsl") );
+   std::ifstream vs_ifs( MY_SHADER_PATH+ shadVert );
+   std::ifstream fs_ifs( MY_SHADER_PATH+ shadFrag );
 
 
 
@@ -395,11 +423,12 @@ void initShaders()
 
     glUseProgram( progid );
 
+    mvpid = glGetUniformLocation( progid, "mvp" );
     projID = glGetUniformLocation(progid, "proj");
     viewID = glGetUniformLocation(progid, "view");
     modelID = glGetUniformLocation(progid, "model");
 
-
+    return shaderProg{progid, mvpid, projID, viewID, modelID};
 }
 
 
@@ -433,9 +462,19 @@ glutInitContextVersion( 3, 2 );
 
     glEnable(GL_DEPTH_TEST);
 check_gl_error();
-    initShaders();
-    check_gl_error();
-    initVAOs();
+
+    shaders[0]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    maillages[0]=initVAOs(shaders[0],"/meshes/space_shuttle2.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+
+    shaders[1]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    maillages[1]=initVAOs(shaders[1],"/meshes/space_station2.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+
+    shaders[2]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    maillages[2]=initVAOs(shaders[2],"/meshes/milleniumfalcon.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+
+    shaders[3]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    maillages[3]=initVAOs(shaders[3],"/meshes/rabbit.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+
     check_gl_error();
     rep.init();
     check_gl_error();
