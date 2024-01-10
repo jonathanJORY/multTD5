@@ -463,17 +463,17 @@ glutInitContextVersion( 3, 2 );
     glEnable(GL_DEPTH_TEST);
 check_gl_error();
 
-    shaders[0]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
-    maillages[0]=initVAOs(shaders[0],"/meshes/space_shuttle2.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    shaders[0]=initShaders("/shaders/phong.vert.glsl","/shaders/basic.frag.glsl");
+    maillages[0]=initVAOs(shaders[0],"/meshes/space_shuttle2.off", "/shaders/basic.vert.glsl","/shaders/basic.frag.glsl");
 
     shaders[1]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
     maillages[1]=initVAOs(shaders[1],"/meshes/space_station2.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
 
-    shaders[2]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
-    maillages[2]=initVAOs(shaders[2],"/meshes/milleniumfalcon.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    shaders[2]=initShaders("/shaders/phong.vert.glsl","/shaders/phongVert.frag.glsl");
+    maillages[2]=initVAOs(shaders[2],"/meshes/milleniumfalcon.off", "/shaders/phong.vert.glsl","/shaders/phongVert.frag.glsl");
 
-    shaders[3]=initShaders("/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
-    maillages[3]=initVAOs(shaders[3],"/meshes/rabbit.off", "/shaders/phong.vert.glsl","/shaders/phong.frag.glsl");
+    shaders[3]=initShaders("/shaders/phong.vert.glsl","/shaders/phongRouge.frag.glsl");
+    maillages[3]=initVAOs(shaders[3],"/meshes/rabbit.off", "/shaders/phong.vert.glsl","/shaders/phongRouge.frag.glsl");
 
     check_gl_error();
     rep.init();

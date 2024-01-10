@@ -1,6 +1,5 @@
 #version 150 core
 
-// couleur émise pour le pixel
 in vec4 color;
 
 
@@ -28,10 +27,8 @@ void main( void )
     vec3 N = normalize(out_normal);
 
     float intensity = max(dot(L,N),0.0);
-    //frag_color = vec4(intensity,intensity,intensity, 1.0);
     vec4 final_color_toonify = toonify(intensity);
-    //vec4 final_color_toonify =vec4(0.2,0.2,0.2, 1.0);
-    //final_color_toonify +=0.6*intensity;
+
    
 
     vec3 E = normalize(eyeVec);
@@ -42,6 +39,4 @@ void main( void )
     vec4 final_color = mix(final_color_toonify, final_color_specular, 0.5);
 
     frag_color = final_color;
-   //frag_color = vec4( mod(ceil(gl_FragCoord.x/30)+ceil(gl_FragCoord.y/10), 2), 0.0, 0.0, 1.0 );
-   //frag_color = vec4( pow(cos(gl_FragCoord.x*0.02),2.0), 0.0, 0.0, 1.0 );
 }
